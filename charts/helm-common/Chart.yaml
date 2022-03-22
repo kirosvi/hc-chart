@@ -2,8 +2,9 @@ apiVersion: v2
 name: helm-common
 description: A base Helm chart for Kubernetes applications
 type: application
-version: 0.0.1
+version: 0.0.2
 appVersion: "1.16.0"
+icon: https://raw.githubusercontent.com/kirosvi/hc-chart/main/images/helm.svg
 sources:
   - https://kirosvi.github.io/hc-chart
 maintainers:
