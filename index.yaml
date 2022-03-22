@@ -3,6 +3,24 @@ entries:
   helm-common:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2022-03-22T18:52:40.514824681Z"
+    description: A base Helm chart for Kubernetes applications
+    digest: 9d4c7e8c83b8a965498904505226b439188b530aeffbf3e4566ada75b5e8a096
+    icon: https://raw.githubusercontent.com/kirosvi/hc-chart/main/images/helm.svg
+    maintainers:
+    - name: Denis Lisovsky
+      url: https://github.com/kirosvi
+    - name: Daniil Firsov
+      url: https://github.com/danuk
+    name: helm-common
+    sources:
+    - https://kirosvi.github.io/hc-chart
+    type: application
+    urls:
+    - https://github.com/kirosvi/hc-chart/releases/download/helm-common-0.0.2/helm-common-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2022-03-22T18:37:36.679423485Z"
     description: A base Helm chart for Kubernetes applications
     digest: 74a6bed225986316efa956403a1a6dbd0cbc144dde43a9b1380a52a86b0761cc
@@ -18,4 +36,4 @@ entries:
     urls:
     - https://github.com/kirosvi/hc-chart/releases/download/helm-common-0.0.1/helm-common-0.0.1.tgz
     version: 0.0.1
-generated: "2022-03-22T18:37:36.679427485Z"
+generated: "2022-03-22T18:52:40.514841781Z"
