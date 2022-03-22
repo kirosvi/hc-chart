@@ -1,4 +1,4 @@
-# helm-common
+# hc-chart
 common helm chart to universal deployment
 it's pretty stable chart and we used it in our company permanently and moving old projects on it
 
@@ -9,7 +9,7 @@ Helm's [documentation](https://helm.sh/docs) to get started.
 
 Once Helm has been set up correctly, add the repo as follows:
 
-    helm repo add kirosvi-charts https://kirosvi.github.io/helm-common
+    helm repo add kirosvi-charts https://kirosvi.github.io/hc-chart
 
 If you had already added this repo earlier, run `helm repo update` to retrieve
 the latest versions of the packages.  You can then run `helm search repo
@@ -17,11 +17,11 @@ kirosvi-charts` to see the charts.
 
 To install the <chart-name> chart:
 
-    helm install helm-common kirosvi-charts/helm-common
+    helm install hc-chart kirosvi-charts/hc-chart
 
 To uninstall the chart:
 
-    helm delete helm-common
+    helm delete hc-chart
 
 ## Features
 
