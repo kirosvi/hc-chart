@@ -1,0 +1,97 @@
+global:
+  imagePullSecrets:
+    - name: regcred-global
+
+  resources:
+    _default:
+      limits:
+        cpu: 2
+        memory: 2Gi
+      requests:
+        cpu: 5m
+        memory: 10Mi
+
+env: &default_env_by_tier
+  APP_ENV:
+    prod: production
+    dev:  development
+    _default: testing
+
+helm-common:
+  apps:
+    test:
+      containers:
+      - name: test
+        image: "{{ .Values.werf.image.my_app }}"
+        env_by_tier:
+          <<: *default_env_by_tier
+
+  services:
+    test:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          protocol: TCP
+
+  test_ingress_paths: &test_ingress_paths
+    - path: /
+      service:
+        name: test
+        port: 80
+      pathType: Prefix
+
+  ingress:
+    test:
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+        nginx.ingress.kubernetes.io/proxy-buffering: "off"
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+      className:
+        _default: nginx-internal
+        prod: nginx
+      acme:
+        prod: true
+      rules:
+        - host:
+            _default: "{{ .Values.global.git_branch }}.my-domain.com"
+            prod: "my-domain.com"
+          paths: *test_ingress_paths
+
+  cronjobs:
+    my-cron-job-1:
+      suspend: true
+      schedule: '*/1 * * * *'
+      image: "{{ .Values.werf.image.my_app2 }}"
+      env_by_tier:
+        <<: *default_env_by_tier
+      command: []
+      args: []
+
+  jobs:
+    my-job:
+      annotations:
+        "helm.sh/hook": "pre-install,pre-upgrade"
+        "helm.sh/hook-weight": "5"
+        "helm.sh/hook-delete-policy": "before-hook-creation"
+      image: "{{ .Values.werf.image.my_app2 }}"
+      command: []
+      args: []
+
+  tests:
+    test-pod:
+      annotations:
+        "helm.sh/hook": test-success
+      image: "{{ .Values.werf.image.my_app2 }}"
+      command: []
+      args: []
+
+imagePullCredentials:
+  auths:
+    https://gitlab.pimpay.ru:4567/v2/:
+      email: devops@pimsolutions.ru
+      username: regcred
+      password:
+

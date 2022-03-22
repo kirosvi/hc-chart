@@ -1,0 +1,11 @@
+apiVersion: v2
+name: example_project
+version: 0.1.0
+dependencies:
+  - name: helm-common
+    version: 0.1.0
+    repository: https://kirosvi.github.io/helm-common
+    ## Additionaly you can export some variables inside subchart
+    export-values:
+    - parent: werf
+      child: werf

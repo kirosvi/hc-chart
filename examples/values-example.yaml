@@ -1,0 +1,266 @@
+
+global:
+  imagePullSecrets:
+    - name: regcred-global
+
+  resources:
+    _default:
+      limits:
+        cpu: 2
+        memory: 2Gi
+      requests:
+        cpu: 5m
+        memory: 10Mi
+    test:
+      limits:
+        cpu: 2000m
+        memory: 4000Mi
+      requests:
+        cpu: 50m
+        memory: 8Mi
+    test2:
+      limits:
+        cpu: 2000m
+        memory: 4000Mi
+      requests:
+        cpu: 50m
+        memory: 47Mi
+
+  env: &default_env_by_tier
+    TIMEZONE: "Europe/Moscow"
+    APP_ENV:
+      prod: production
+      dev:  development
+      _default: testing
+
+
+helm-common:
+  apps:
+    test-app:
+      labels: {}
+      replicas:
+        prod: 1
+      podDisruptionBudget: 1
+      strategy_by_tier:
+        _default:
+          type: Recreate
+        prod:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 1
+            maxSurge: 1
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+          maxSurge: 1
+      annotations: {}
+      serviceAccount:
+        name: "test-sa"
+      podSecurityContext:
+        fsGroup: 33
+      volumes: []
+      antiAffinity: true
+      antiAffinitySoft: true
+      pool:
+        prod: prod
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+          - "php"
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: test
+        image: "{{ .Values.werf.image.my_app }}"
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+        command: []
+        args: []
+        volumeMounts: []
+        env:
+          - name: GIT_BRANCH
+            value: "{{ .Values.global.git_branch }}"
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        envFrom:
+          - configMapRef:
+              name: my_configmap_env
+        env_tpl: '{{ include "env_by_pluck" (list $.Values.global.tier $.Values.global.env) }}'
+        envFrom:
+          - configMapRef:
+              name: env-configmap
+        ports:
+          - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+    test-app2:
+      replicas:
+        prod: 2
+      imagePullSecrets:
+        - name: regcred2
+      containers:
+      - name: test2
+        image: "{{ .Values.werf.image.my_app2 }}"
+        command: ["/bin/sleep","infinity"]
+        env_tpl: '{{ include "env_by_pluck" (list $.Values.global.tier $.Values.global.env) }}'
+
+  services:
+    test:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+          protocol: TCP
+    test-external-name:
+      type: ExternalName
+      externalName: 127.0.0.1
+
+  test_ingress_paths: &test_ingress_paths
+    - path: /
+      service:
+        name: test
+        port: 80
+      pathType: Prefix
+
+  ingress:
+    test:
+      annotations_by_tier:
+        prod:
+          test_prod: "1"
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+        nginx.ingress.kubernetes.io/proxy-buffering: "off"
+        nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+      className:
+        _default: nginx-internal
+        prod: nginx
+      classNameForBranches:
+        master: nginx-internal
+      no_ssl_redirect: true
+      acme:
+        prod: true
+      acme_for_branches:
+        - master
+      rules:
+        - host:
+            _default: "{{ .Values.global.git_branch }}.my-domain.com"
+            prod: "my-domain.com"
+          paths: *test_ingress_paths
+        - host:
+            prod: "prod-domain.ru"
+          paths: *test_ingress_paths
+
+  cronjobs:
+    my-cron-job-1:
+      suspend:
+        _default: true
+        prod: false
+      schedule: '*/1 * * * *'
+      image: "{{ .Values.werf.image.my_app2 }}"
+      imagePullSecrets:
+        - name: regcred
+      command: []
+      args: []
+      env:
+        - name: ROLE
+          value: php
+      env_tpl: '{{ include "env_by_pluck" (list $.Values.global.tier $.Values.global.env) }}'
+      envFrom:
+        - secretRef:
+            name: SECRET_DATA
+        - configMapRef:
+            name: my_configmap_env
+      volumes:
+        - name: config-mount
+          configMap:
+            name: configmap-name
+            items:
+              - key: configuration.yml
+                path: configuration.yml
+      volumeMounts:
+        - name: config-mount
+          mountPath: /etc/config
+      serviceAccount:
+        name: "test-sa"
+      failedJobsHistoryLimit: 1
+      successfulJobsHistoryLimit: 3
+      startingDeadlineSeconds: 120
+      concurrencyPolicy: Forbid
+      restartPolicy: Never
+      nodeSelector:
+        prod:
+          linux.host: cos
+      tolerations:
+        prod:
+          - key: linux.host
+            value: cos
+
+  jobs:
+    my-job:
+      deploy_only_for_tiers:
+        - prod
+      deploy_only_for_branches:
+        - master
+      backoffLimit: 1
+      pool:
+        prod: prod
+      restartPolicy: Never
+      annotations:
+        "helm.sh/hook": "pre-install,pre-upgrade"
+        "helm.sh/hook-weight": "5"
+        "helm.sh/hook-delete-policy": "before-hook-creation"
+      image: "{{ .Values.werf.image.my_app2 }}"
+      command:
+        - "/bin/sh"
+        - "-c"
+      args:
+        - /bin/sleep 30;
+          exit 0;
+      serviceAccount:
+        name: "test-sa"
+      volumes:
+        - name: config-mount
+          configMap:
+            name: configmap-name
+            items:
+              - key: configuration.yml
+                path: configuration.yml
+      volumeMounts:
+        - name: config-mount
+          mountPath: /etc/config
+
+  tests:
+    test-pod:
+      pool:
+        prod: prod
+      restartPolicy: Never
+      annotations:
+        "helm.sh/hook": test-success
+      image: "{{ .Values.werf.image.my_app2 }}"
+      command:
+        - "/bin/sh"
+        - "-c"
+      args: ["uname", "-a"]
+
+imagePullCredentials:
+  auths:
+    https://gitlab.pimpay.ru:4567/v2/:
+      email: devops@pimsolutions.ru
+      username: regcred
+      password:
+
