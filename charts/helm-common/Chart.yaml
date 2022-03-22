@@ -1,0 +1,13 @@
+apiVersion: v2
+name: helm-common
+description: A base Helm chart for Kubernetes applications
+type: application
+version: 0.0.1
+appVersion: "1.16.0"
+sources:
+  - https://kirosvi.github.io/hc-chart
+maintainers:
+  - name: Denis Lisovsky
+    url: https://github.com/kirosvi
+  - name: Daniil Firsov
+    url: https://github.com/danuk
