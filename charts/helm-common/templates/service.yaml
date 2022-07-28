@@ -7,7 +7,10 @@ metadata:
   name: {{ $name }}
   labels:
     {{- include "helm.labels" $ | nindent 4 }}
-    app: {{ $name }}
+    app: {{ .selectorAppName | default $name }}
+  {{- with .annotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .type }}
   {{- if .externalName }}
@@ -19,7 +22,7 @@ spec:
   {{- if ne .type "ExternalName" }}
   selector:
     {{- include "helm.selectorLabels" $ | fromJson | toYaml | nindent 4 }}
-    app: {{ $name }}
+    app: {{ .selectorAppName | default $name }}
   {{- end }}
 {{- end }}
 {{- end }}

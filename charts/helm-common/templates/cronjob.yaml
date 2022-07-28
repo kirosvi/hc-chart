@@ -2,7 +2,11 @@
 {{- if include "should_be_deployed" (list $ .) }}
 ---
 {{- $secrets :=  include "imagePullSecrets" (list $ .imagePullSecrets ) }}
+{{ if $.Capabilities.KubeVersion.Version | semverCompare ">=1.21.0-0" }}
+apiVersion: batch/v1
+{{- else }}
 apiVersion: batch/v1beta1
+{{- end }}
 kind: CronJob
 metadata:
   name: {{ $name }}
