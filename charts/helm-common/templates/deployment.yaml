@@ -34,9 +34,11 @@ spec:
   template:
     metadata:
       labels: *selectorLabels
-      {{- with .annotations }}
+      {{- if .annotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+      {{- range $key, $value := .annotations }}
+        {{ $key }}: {{ tpl $value $ }}
+      {{- end }}
       {{- end }}
     spec:
       {{- $secrets | nindent 6}}

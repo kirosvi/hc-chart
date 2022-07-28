@@ -21,7 +21,7 @@
 {{- $_ := set $annotations "nginx.ingress.kubernetes.io/ssl-redirect" "false" }}
 {{- end }}
 {{ $ing_name := printf "%s-%s" $name $.Release.Name }}
-{{- if $.Values.global.git_branch }}
+{{- if and ($.Values.global.git_branch) ( not (contains $.Values.global.git_branch $.Release.Name)) }}
 {{ $ing_name = printf "%s-%s-%s" $name $.Release.Name $.Values.global.git_branch }}
 {{ end }}
 {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion -}}
